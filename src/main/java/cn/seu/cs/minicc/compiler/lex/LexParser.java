@@ -127,7 +127,7 @@ public class LexParser {
             RangeIndex range = actionRanges.get(0);
             String regex = v.substring(0, range.getStart()).trim();
             String action = v.substring(range.getEnd() + 1).trim();
-            // System.out.println(regex + ":" + action);
+            System.out.println(regex + ":" + action);
             //TODO 解析正则表达式
 
             //TODO 解析动作
