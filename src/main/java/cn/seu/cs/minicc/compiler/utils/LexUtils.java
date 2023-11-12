@@ -47,4 +47,13 @@ public class LexUtils {
         }
         return result;
     }
+
+    public static RangeIndex firstMatch(Pattern pattern, String str) {
+        Matcher matcher = pattern.matcher(str);
+        if (matcher.find()) {
+            return new RangeIndex(matcher.start(), matcher.end());
+        } else {
+            return null;
+        }
+    }
 }

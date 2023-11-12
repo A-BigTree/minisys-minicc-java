@@ -143,7 +143,8 @@ public class Regex {
                     + ")");
         }
         AtomicInteger index = new AtomicInteger();
-        rangeExpanded = replace(RANGE_NOT_SLASH, escapeExpanded, value -> replacement.get(index.getAndIncrement()));
+        rangeExpanded = replace(RANGE_NOT_SLASH,
+                escapeExpanded, value -> replacement.get(index.getAndIncrement()));
     }
 
     private static Set<String> getConjugateSet(Set<String> expands) {
@@ -246,6 +247,7 @@ public class Regex {
                     .map(value -> value.trim().isEmpty() ? "[ws]" : value)
                     .toList();
             boolean waitingEscape = false;
+            System.out.println(partsNew);
             for (String part : partsNew) {
                 part = part.trim();
                 if (waitingEscape) {

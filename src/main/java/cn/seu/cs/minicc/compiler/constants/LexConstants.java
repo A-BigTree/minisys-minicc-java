@@ -20,7 +20,9 @@ public class LexConstants {
     public final static Pattern RANGE_NOT_SLASH =
             Pattern.compile("(?=[^\\\\]|^)\\[(([^\\[\\]]+)[^\\\\])]");
 
+    // 范围角标对
     public final static Pattern RANGE_PAIR =
             Pattern.compile("\\S-\\S");
+    public final static Pattern ALIAS_PART = Pattern.compile("\\s+");
 
 }

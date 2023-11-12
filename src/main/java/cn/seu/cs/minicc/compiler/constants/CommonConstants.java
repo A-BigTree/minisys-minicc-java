@@ -8,4 +8,6 @@ public class CommonConstants {
     public final static String EMPTY_STRING = "";
     public final static int ASCII_MIN = 32;
     public final static int ASCII_MAX = 126;
+
+    public final static String LINE_SEPARATOR = System.lineSeparator();
 }
