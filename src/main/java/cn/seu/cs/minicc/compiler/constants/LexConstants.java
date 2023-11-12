@@ -25,4 +25,6 @@ public class LexConstants {
             Pattern.compile("\\S-\\S");
     public final static Pattern ALIAS_PART = Pattern.compile("\\s+");
 
+    public final static Pattern ACTION_SPLIT =
+            Pattern.compile("((action)|(ACTION)):");
 }

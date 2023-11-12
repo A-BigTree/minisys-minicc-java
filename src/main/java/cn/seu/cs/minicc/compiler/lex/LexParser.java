@@ -15,8 +15,10 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static cn.seu.cs.minicc.compiler.constants.CommonConstants.LINE_SEPARATOR;
+import static cn.seu.cs.minicc.compiler.constants.LexConstants.ACTION_SPLIT;
 import static cn.seu.cs.minicc.compiler.constants.LexConstants.ALIAS_PART;
 import static cn.seu.cs.minicc.compiler.utils.LexUtils.firstMatch;
+import static cn.seu.cs.minicc.compiler.utils.LexUtils.getMatchedRanges;
 
 /**
  * @author Shuxin Wang <shuxinwang662@gmail.com>
@@ -113,6 +115,22 @@ public class LexParser {
             }
         }
         // 分析规则动作部分，并作别名展开
+        for (String value : actionPart.split("\n")) {
+            String v = value.trim();
+            if (v.isEmpty()) {
+                continue;
+            }
+            List<RangeIndex> actionRanges = getMatchedRanges(ACTION_SPLIT, v);
+            if (actionRanges.size() != 1) {
+                throw new LexException(EXCEPTION_PREFIX);
+            }
+            RangeIndex range = actionRanges.get(0);
+            String regex = v.substring(0, range.getStart()).trim();
+            String action = v.substring(range.getEnd() + 1).trim();
+            // System.out.println(regex + ":" + action);
+            //TODO 解析正则表达式
 
+            //TODO 解析动作
+        }
     }
 }
