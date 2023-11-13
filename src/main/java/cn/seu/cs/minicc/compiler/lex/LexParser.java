@@ -130,6 +130,8 @@ public class LexParser {
             System.out.println(regex + ":" + action);
             //TODO 解析正则表达式
 
+            // TODO 别名扩充
+
             //TODO 解析动作
         }
     }
