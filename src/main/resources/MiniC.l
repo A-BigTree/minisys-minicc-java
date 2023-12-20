@@ -8,7 +8,7 @@ H     0x([a-zA-Z0-9])+
 %}
 
 %%
-"//"(.*)(\n)?     action:{ return(_COMMENT); }
+"//"(.*)(\n)?     { return(_COMMENT); }
 "break"			      action:{ return(BREAK); }
 "continue"	      action:{ return(CONTINUE); }
 "else"			      action:{ return(ELSE); }

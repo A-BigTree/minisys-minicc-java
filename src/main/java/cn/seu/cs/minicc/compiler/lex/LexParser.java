@@ -1,138 +1,134 @@
 package cn.seu.cs.minicc.compiler.lex;
 
-import cn.seu.cs.minicc.compiler.common.RangeIndex;
-import cn.seu.cs.minicc.compiler.exception.LexException;
-import lombok.Data;
+import cn.seu.cs.minicc.compiler.lex.dfa.DFA;
+import cn.seu.cs.minicc.compiler.lex.dfa.Transform;
+import lombok.extern.slf4j.Slf4j;
 
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static cn.seu.cs.minicc.compiler.constants.CommonConstants.LINE_SEPARATOR;
-import static cn.seu.cs.minicc.compiler.constants.LexConstants.ACTION_SPLIT;
-import static cn.seu.cs.minicc.compiler.constants.LexConstants.ALIAS_PART;
-import static cn.seu.cs.minicc.compiler.utils.LexUtils.firstMatch;
-import static cn.seu.cs.minicc.compiler.utils.LexUtils.getMatchedRanges;
 
 /**
  * @author Shuxin Wang <shuxinwang662@gmail.com>
- * Created on 2023/11/12
+ * Created on 2023/12/20
  */
-@Data
+@Slf4j
 public class LexParser {
-    // .l文件内容
-    private String filePath;
-    private String rawContent;
-    private List<String> splitContent;
-    // .l文件的四部分
-    private String copyPart; //直接复制部分
-    private String regexAliasPart;  // 正则别名部分
-    private String actionPart;  // 正则-动作部分
-    private String cCodePart;  // C代码部分
-    // 解析结果
-    private Map<String, String> regexAliases;
-    private Map<Regex, Action> regexActionMap;
 
-    private final static String DEFAULT_LEX_FILE = "MiniC.l";
+    public List<Token> lexSourceCode(String sourceCode, DFA dfa) {
+        String code = sourceCode.replace("\r\n", "\n");
 
-    public final static String EXCEPTION_PREFIX = "Lex Parser error";
+        Integer initState = dfa.getStartStatesIndex().get(0);
+        int yyLineNo = 1;
+        String yyText = "";
+        char curChar = ' ';
+        StringBuilder curBuf = new StringBuilder();
+        int curState = initState;
+        int curPrt = 0;
+        int lastAcceptState = -1;
+        int lastAcceptPrt = 0;
 
-    public LexParser(String path) throws Exception {
-        this.filePath = path;
-        URL url = this.getClass().getClassLoader().getResource(this.filePath);
-        if (url == null) {
-            throw new LexException(EXCEPTION_PREFIX);
+        List<Token> tokens = new ArrayList<>();
+
+        List<int[]> transMatrix = getTransMatrix(dfa);
+
+        List<Integer> acceptList = getAcceptList(dfa);
+
+        while (true) {
+            int rollBackLine = 0;
+            if (curPrt == code.length()) {
+                break;
+            }
+            // 当前状态未结束
+            while (curState != -1) {
+                curChar = code.charAt(curPrt);
+                curBuf.append(curChar);
+                curPrt++;
+                if (curChar == '\n') {
+                    yyLineNo++;
+                    rollBackLine++;
+                }
+                curState = transMatrix.get(curState)[curChar];
+                // 半路到达接受状态
+                if (curState != -1 && acceptList.get(curState) != -1) {
+                    lastAcceptState = curState;
+                    lastAcceptPrt = curPrt - 1;
+                    rollBackLine = 0;
+                }
+                if (curPrt >= code.length()) {
+                    break;
+                }
+            }
+            // 处理接收情况
+            if (lastAcceptState != -1) {
+                // 回退多余的失败匹配
+                curPrt = lastAcceptPrt + 1;
+                yyLineNo -= rollBackLine;
+                yyText = curBuf.substring(0, curBuf.length() - 1);
+                curState = 0;
+                curBuf = new StringBuilder();
+                tokens.add(new Token(getTokenName(dfa.getAcceptActionMap().get(dfa.getStates().get(lastAcceptState).getUuid()).getCode()), yyText));
+                lastAcceptState = -1;
+                lastAcceptPrt = 0;
+            } else {
+                log.error("无法识别的字符，行号：{}，字符：{}", yyLineNo, curChar);
+            }
         }
-        URI uri = url.toURI();
-        String context = Files.readString(Paths.get(uri));
-        this.rawContent = context.replaceAll(LINE_SEPARATOR, "\n");
-        this.regexAliases = new HashMap<>();
-        this.regexActionMap = new HashMap<>();
-        analysisContent();
-        analysisAttributes();
+
+        tokens.add(new Token("SP_END", ""));
+
+        return tokens;
     }
 
-    /**
-     * 分析文件内容
-     */
-    private void analysisContent() throws Exception {
-        this.splitContent = Stream.of(rawContent.split("\n"))
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .toList();
-        int copyPartStart = -1, copyPartEnd = -1;
-        List<Integer> twoPercent = new ArrayList<>(2);
-        for (int i = 0; i < splitContent.size(); i++) {
-            String content = splitContent.get(i);
-            switch (content) {
-                case "%{" -> {
-                    if (copyPartStart != -1) {
-                        throw new LexException(EXCEPTION_PREFIX);
-                    }
-                    copyPartStart = i;
-                }
-                case "%}" -> {
-                    if (copyPartEnd != -1) {
-                        throw new LexException(EXCEPTION_PREFIX);
-                    }
-                    copyPartEnd = i;
-                }
-                case "%%" -> {
-                    if (twoPercent.size() >= 2) {
-                        throw new LexException(EXCEPTION_PREFIX);
-                    }
-                    twoPercent.add(i);
+    // 生成状态转义矩阵
+    private List<int[]> getTransMatrix(DFA dfa) {
+        List<int[]> transMatrix = new ArrayList<>();
+        for (int i = 0; i < dfa.getTransformAdjList().size(); i++) {
+            int[] targets = new int[128];
+            Arrays.fill(targets, -1);
+            int other = -1;
+            for (Transform transform : dfa.getTransformAdjList().get(i)) {
+                if (transform.getAlpha() == SpAlpha.OTHER.getIndex() || transform.getAlpha() == SpAlpha.ANY.getIndex()) {
+                    other = transform.getTarget();
+                } else {
+                    targets[dfa.getAlphabet().get(transform.getAlpha()).charAt(0)] = transform.getTarget();
                 }
             }
+            if (other != -1) {
+                for (int target : targets) {
+                    if (target == -1) {
+                        target = other;
+                    }
+                }
+            }
+            transMatrix.add(targets);
         }
-        this.cCodePart = String.join("\n", splitContent.subList(twoPercent.get(1) + 1, splitContent.size()));
-        this.copyPart = String.join("\n", splitContent.subList(copyPartStart + 1, copyPartEnd));
-        this.actionPart = String.join("\n", splitContent.subList(twoPercent.get(0) + 1, twoPercent.get(1)));
-        this.regexAliasPart = String.join("\n", splitContent.subList(0, copyPartStart));
+        return transMatrix;
     }
 
-    /**
-     * 解析语义动作
-     */
-    private void analysisAttributes() throws Exception {
-        // 分析正则别名部分
-        for (String value : regexAliasPart.split("\n")) {
-            String v = value.trim();
-            if (!v.isEmpty()) {
-                RangeIndex range = firstMatch(ALIAS_PART, v);
-                if (range == null) {
-                    throw new LexException(EXCEPTION_PREFIX);
-                }
-                String alias = v.substring(0, range.getEnd()).trim();
-                String regex = v.substring(range.getEnd()).trim();
-                regexAliases.put(alias, regex);
+    // 生成接受状态列表
+    private List<Integer> getAcceptList(DFA dfa) {
+        List<Integer> acceptList = new ArrayList<>(dfa.getStateCount());
+        for (int i = 0; i < dfa.getStates().size(); i++) {
+            if (dfa.getAcceptStates().contains(dfa.getStates().get(i))) {
+                acceptList.add(i);
+            } else {
+                acceptList.add(-1);
             }
         }
-        // 分析规则动作部分，并作别名展开
-        for (String value : actionPart.split("\n")) {
-            String v = value.trim();
-            if (v.isEmpty()) {
-                continue;
-            }
-            List<RangeIndex> actionRanges = getMatchedRanges(ACTION_SPLIT, v);
-            if (actionRanges.size() != 1) {
-                throw new LexException(EXCEPTION_PREFIX);
-            }
-            RangeIndex range = actionRanges.get(0);
-            String regex = v.substring(0, range.getStart()).trim();
-            String action = v.substring(range.getEnd() + 1).trim();
-            System.out.println(regex + ":" + action);
-            //TODO 解析正则表达式
+        return acceptList;
+    }
 
-            // TODO 别名扩充
+    // 拆解动作代码
+    private String getTokenName(String actionCode) {
+        return actionCode.replace(" ", "")
+                .replace("return", "")
+                .replace(";", "")
+                .replace("(", "")
+                .replace(")", "");
+    }
 
-            //TODO 解析动作
-        }
+    public static void main(String[] args) {
+
     }
 }
