@@ -1,5 +1,6 @@
 package cn.seu.cs.minicc.compiler.lex;
 
+import cn.seu.cs.minicc.compiler.exception.LexException;
 import cn.seu.cs.minicc.compiler.lex.dfa.DFA;
 import cn.seu.cs.minicc.compiler.lex.dfa.Transform;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.util.List;
 @Slf4j
 public class LexParser {
 
-    public List<Token> lexSourceCode(String sourceCode, DFA dfa) {
+    public List<Token> lexSourceCode(String sourceCode, DFA dfa) throws LexException {
         String code = sourceCode.replace("\r\n", "\n");
 
         Integer initState = dfa.getStartStatesIndex().get(0);
@@ -71,7 +72,7 @@ public class LexParser {
                 lastAcceptState = -1;
                 lastAcceptPrt = 0;
             } else {
-                log.error("无法识别的字符，行号：{}，字符：{}", yyLineNo, curChar);
+                throw new LexException("无法识别的字符，行号：%s，字符：%s", yyLineNo, curChar);
             }
         }
 
@@ -126,9 +127,5 @@ public class LexParser {
                 .replace(";", "")
                 .replace("(", "")
                 .replace(")", "");
-    }
-
-    public static void main(String[] args) {
-
     }
 }
