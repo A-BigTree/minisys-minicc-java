@@ -34,7 +34,6 @@ public class LALRParse {
             e.printStackTrace();
             throw new YaccException("Yacc Parser error");
         }
-        log.info("{}", lalrAnalyzer);
         return lalrAnalyzer;
     }
 

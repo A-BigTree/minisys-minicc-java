@@ -87,21 +87,23 @@ public class YaccParse {
         tokens.removeIf(token -> WHITESPACE.equals(token.getName()) && !token.getLiteral().equals("\n"));
         // Token编号
         Map<String, Integer> tokenIds = getTokenIds(analyzer);
+        System.out.println(tokenIds);
         // LALR分析表
         List<List<TableCell>> table = getTable(analyzer);
 
         stateStack.add(analyzer.getDfa().getStartStateId());
-        Integer token = tokenIds.get(getCurrToken(tokens).getName());
-        while (token != null && token > 0) {
+
+        Integer token = tokenIds.getOrDefault(getCurrToken(tokens).getName(), null);
+        while (token != null) {
             Integer nextToken = dealWithSymbol(token, table, tokens, analyzer);
-            while (nextToken != null && !nextToken.equals(token)) {
+            while (!nextToken.equals(token)) {
                 if (nextToken == -1) {
                     return symbolStack.get(0).getNode();
                 }
                 dealWithSymbol(nextToken, table, tokens, analyzer);
                 nextToken = dealWithSymbol(token, table, tokens, analyzer);
             }
-            token = tokenIds.get(getCurrToken(tokens).getName());
+            token = tokenIds.getOrDefault(getCurrToken(tokens).getName(), null);
         }
         return null;
     }
@@ -166,6 +168,9 @@ public class YaccParse {
                                    List<List<TableCell>> table,
                                    List<Token> tokens,
                                    LALR analyzer) throws YaccException {
+        if (symbol == null) {
+            return null;
+        }
         if (symbol == WHITESPACE_SYMBOL_ID) {
             lineNo++;
             return WHITESPACE_SYMBOL_ID;
@@ -178,8 +183,8 @@ public class YaccParse {
                             new ASTNode(preToken.getName(), TOKEN.getType(),
                                     preToken.getLiteral(), new ArrayList<>()))
             );
-            return null;
-        } else if (LALRActionType.NON_TERMINAL.equals(action)) {
+        }
+        if (SHIFT.equals(action) || LALRActionType.NON_TERMINAL.equals(action)) {
             stateStack.add(table.get(stateStack.get(stateStack.size() - 1)).get(symbol).getTarget());
             return symbol;
         } else if (REDUCE.equals(action)) {
@@ -210,6 +215,8 @@ public class YaccParse {
         } else if (ACCEPT.equals(action)) {
             return -1;
         } else {
+            System.out.println(stateStack);
+            System.out.println(symbolStack);
             throw new YaccException("语法分析表中存在未定义行为：在状态%s下收到%s时进行%s，推测行号为%s",
                     stateStack.get(stateStack.size() - 1),
                     analyzer.getSymbols().get(symbol).getContent(),
