@@ -7,7 +7,7 @@ import lombok.Data;
  * Created on 2023/12/20
  */
 @Data
-public class LALRDFA {
-    private Integer startStateId;
-
+public class LALRAction {
+    private String type;
+    private Integer data;
 }

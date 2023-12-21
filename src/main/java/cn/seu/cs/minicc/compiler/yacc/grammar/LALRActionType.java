@@ -9,10 +9,11 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
-public enum GrammarSymbolType {
-    ASCII("ascii"),
-    TOKEN("token"),
-    SP_TOKEN("sptoken"),
+public enum LALRActionType {
+    SHIFT("shift"),
+    REDUCE("reduce"),
+    ACCEPT("acc"),
+    NONE("none"),
     NON_TERMINAL("nonterminal"),
     ;
     final String type;

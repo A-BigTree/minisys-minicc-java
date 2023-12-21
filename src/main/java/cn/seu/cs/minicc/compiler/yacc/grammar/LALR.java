@@ -1,5 +1,6 @@
 package cn.seu.cs.minicc.compiler.yacc.grammar;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 
 import java.util.List;
@@ -15,4 +16,24 @@ public class LALR {
     private List<LALROperators> operators;
     private List<LALRProducer> producers;
     private Integer startSymbol;
+    private LALRDfa dfa;
+
+    @JsonAlias("ACTIONTable")
+    private List<List<LALRAction>> actionTable;
+
+    @JsonAlias("GOTOTable")
+    private List<List<Integer>> gotoTable;
+
+    @JsonAlias("ACTIONReverseLookup")
+    private List<Integer> actionReverseLookup;
+
+    @JsonAlias("GOTOReverseLookup")
+    private List<Integer> gotoReverseLookup;
+
+    private List<List<Integer>> first;
+    private Integer epsilon;
+
+    public String getLHS(LALRProducer producer) {
+        return symbols.get(producer.getLhs()).getContent();
+    }
 }

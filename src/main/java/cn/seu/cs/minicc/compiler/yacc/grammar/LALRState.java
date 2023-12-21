@@ -10,13 +10,7 @@ import java.util.List;
  * Created on 2023/12/20
  */
 @Data
-public class LALRProducer {
-    @JsonAlias("_lhs")
-    private Integer lhs;
-
-    @JsonAlias("_rhs")
-    private List<Integer> rhs;
-
-    @JsonAlias("_action")
-    private String action;
+public class LALRState {
+    @JsonAlias("_items")
+    private List<LALRStateItem> items;
 }
