@@ -20,4 +20,10 @@ public class IRArray extends AbstractIRVal{
         super(s, name, type, scope);
         this.len = len;
     }
+
+    public String toString() {
+        return "\t" + id + "(" + name + ", " + type + ", " +
+                "array" + ", " +
+                scope + ")\n";
+    }
 }

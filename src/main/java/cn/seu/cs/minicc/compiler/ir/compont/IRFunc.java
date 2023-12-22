@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Shuxin Wang <shuxinwang662@gmail.com>
@@ -23,4 +24,10 @@ public class IRFunc {
     private List<AbstractIRVal> localVars;
     private List<String> childFunctions;
     private List<Integer> scopePath;
+
+    public String toString() {
+        return "\tname: " + name + "\n" +
+                "\tretType: " + retType + "\n" +
+                "\tparamList: " + paramList.stream().map(IRVar::toFuncParam).collect(Collectors.joining(",")) + "\n" ;
+    }
 }

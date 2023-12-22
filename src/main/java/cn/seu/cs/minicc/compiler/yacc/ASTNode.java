@@ -29,7 +29,7 @@ public class ASTNode {
     }
 
     public ASTNode getByIndex(int index) throws YaccException {
-        if (children == null || index < 0 || index >= children.size()) {
+        if (children == null || index < 0 || index > children.size()) {
             throw new YaccException("i超出范围：%s out-of %s", index, children == null ? 0 : children.size());
         }
         return children.get(index - 1);

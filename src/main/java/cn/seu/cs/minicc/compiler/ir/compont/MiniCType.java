@@ -27,7 +27,7 @@ public enum MiniCType {
     );
 
     public static MiniCType getByType(String type) {
-        return typeMap.get(type);
+        return typeMap.getOrDefault(type, NONE);
     }
 
     public boolean equals(String type) {

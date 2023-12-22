@@ -16,4 +16,8 @@ public class Quad {
     private String arg1;
     private String arg2;
     private String res;
+
+    public String toString() {
+        return "\t(" + op + ", " + arg1 + ", " + arg2 + ", " + res + ")";
+    }
 }

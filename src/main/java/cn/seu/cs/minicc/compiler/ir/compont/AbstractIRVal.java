@@ -14,8 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public abstract class AbstractIRVal {
-    private String id;
-    private String name;
-    private MiniCType type;
-    private List<Integer> scope;
+    protected String id;
+    protected String name;
+    protected MiniCType type;
+    protected List<Integer> scope;
 }

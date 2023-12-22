@@ -87,7 +87,6 @@ public class YaccParse {
         tokens.removeIf(token -> WHITESPACE.equals(token.getName()) && !token.getLiteral().equals("\n"));
         // Token编号
         Map<String, Integer> tokenIds = getTokenIds(analyzer);
-        System.out.println(tokenIds);
         // LALR分析表
         List<List<TableCell>> table = getTable(analyzer);
 

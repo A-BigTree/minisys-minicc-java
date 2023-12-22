@@ -18,8 +18,9 @@ import static cn.seu.cs.minicc.compiler.yacc.grammar.ASTNodeName.*;
  * @author Shuxin Wang <shuxinwang662@gmail.com>
  * Created on 2023/12/21
  */
+@Data
 public class IRParse {
-    public static final List<Integer> GLOBAL_SCOPE = List.of(0);
+    public static final List<Integer> GLOBAL_SCOPE = new ArrayList<>(List.of(0));
     public static final String LABEL_PREFIX = "_label_";
     public static final String VAR_PREFIX = "_var_";
 
@@ -59,7 +60,7 @@ public class IRParse {
 
     private final List<IRFunc> funcPool;
     private final List<Quad> quads;
-    private List<BasicBlock> basicBlocks;
+    private final List<BasicBlock> basicBlocks;
     private final List<AbstractIRVal> valPool;
     private Integer varCount;
     private Integer labelCount;
@@ -91,7 +92,7 @@ public class IRParse {
                 newLabel("__asm_entry"),
                 newLabel("__asm_exit"),
                 true,
-                List.of(new IRVar(newVarId(), "asm", STRING, scopePath, true)),
+                new ArrayList<>(List.of(new IRVar(newVarId(), "asm", STRING, new ArrayList<>(scopePath), true))),
                 new ArrayList<>(),
                 new ArrayList<>(),
                 scopePath
@@ -101,6 +102,8 @@ public class IRParse {
         postProcess1();
         postCheck();
         postProcess2();
+        // 基本块划分
+        toBasicBlocks();
     }
 
     private void postProcess1() {
@@ -159,7 +162,7 @@ public class IRParse {
         quads.removeIf(Objects::isNull);
     }
 
-    private void toBasicBlocks() {
+    public void toBasicBlocks() {
         List<Integer> leaders = new ArrayList<>();
         boolean nextFlag = false;
         for (int i = 0; i < quads.size(); i++) {
@@ -190,6 +193,23 @@ public class IRParse {
             }
         }
         leaders.sort((Comparator.comparingInt(o -> o)));
+        List<Integer> leaders2 = new ArrayList<>();
+        for (Integer index : leaders) {
+            if (!leaders2.contains(index)) {
+                leaders2.add(index);
+            }
+        }
+        if (leaders2.get(leaders2.size() - 1) != quads.size()) {
+            leaders2.add(quads.size());
+        }
+        int id = 0;
+        for (int i = 0; i < leaders2.size() - 1; i++) {
+            basicBlocks.add(
+                    new BasicBlock(id++,
+                            quads.subList(leaders2.get(i),
+                                    leaders2.get(i + 1)))
+            );
+        }
 
     }
 
@@ -276,7 +296,7 @@ public class IRParse {
 
     private void parseVarDecl(ASTNode node) throws YaccException, IRException {
         if (node.match("type_spec IDENTIFIER")) {
-            MiniCType type = getByType(node.getByIndex(1).getLiteral());
+            MiniCType type = parseTypeSpec(node.getByIndex(1));
             String name = node.getByIndex(2).getLiteral();
             if (type == VOID) {
                 throw new IRException("void类型变量声明：%s", name);
@@ -286,10 +306,10 @@ public class IRParse {
                     .anyMatch(val -> sameScope(val.getScope(), GLOBAL_SCOPE) && val.getName().equals(name))) {
                 throw new IRException("重复声明变量：%s", name);
             }
-            valPool.add(new IRVar(newVarId(), name, type, scopePath, false));
+            valPool.add(new IRVar(newVarId(), name, type, new ArrayList<>(scopePath), false));
         }
         if (node.match("type_spec IDENTIFIER CONSTANT")) {
-            MiniCType type = getByType(node.getByIndex(1).getLiteral());
+            MiniCType type = parseTypeSpec(node.getByIndex(1));
             String name = node.getByIndex(2).getLiteral();
             int len = Integer.parseInt(node.getByIndex(3).getLiteral());
             scopePath = GLOBAL_SCOPE;
@@ -301,7 +321,7 @@ public class IRParse {
     }
 
     private void parseFunDecl(ASTNode node) throws YaccException, IRException {
-        MiniCType retType = getByType(node.getByIndex(1).getLiteral());
+        MiniCType retType = parseTypeSpec(node.getByIndex(1));
         String funcName = node.getByIndex(2).getLiteral();
         if (funcPool.stream().anyMatch(func -> func.getName().equals(funcName))) {
             throw new IRException("重复声明函数：%s", funcName);
@@ -323,6 +343,10 @@ public class IRParse {
         // 退出作用域
         quads.add(new Quad(SET_LABEL.getOp(), "", "", exitLabel));
         scopePath.remove(scopePath.size() - 1);
+    }
+
+    private MiniCType parseTypeSpec(ASTNode node) {
+        return getByType(node.getByIndex(1).getLiteral());
     }
 
     private void parseParams(ASTNode node, String funcName) throws YaccException, IRException {
@@ -347,12 +371,12 @@ public class IRParse {
     }
 
     private void parseParam(ASTNode node, String funcName) throws YaccException, IRException {
-        MiniCType type = getByType(node.getByIndex(1).getLiteral());
+        MiniCType type = parseTypeSpec(node.getByIndex(1));
         String name = node.getByIndex(2).getLiteral();
         if (type == VOID) {
             throw new IRException("void类型变量声明：%s", name);
         }
-        IRVar var = new IRVar(newVarId(), name, type, scopePath, true);
+        IRVar var = new IRVar(newVarId(), name, type, new ArrayList<>(scopePath), true);
         valPool.add(var);
         funcPool.stream()
                 .filter(func -> func.getName().equals(funcName))
@@ -372,12 +396,12 @@ public class IRParse {
 
     private void parseLocalDecl(ASTNode node) throws IRException, YaccException {
         if (node.getChildren().size() == 2) {
-            MiniCType type = getByType(node.getByIndex(1).getLiteral());
+            MiniCType type = parseTypeSpec(node.getByIndex(1));
             String name = node.getByIndex(2).getLiteral();
             if (type == VOID) {
                 throw new IRException("void类型变量声明：%s", name);
             }
-            IRVar val = new IRVar(newVarId(), name, type, scopePath, false);
+            IRVar val = new IRVar(newVarId(), name, type, new ArrayList<>(scopePath), false);
             if (valPool.stream()
                     .anyMatch(v -> sameVal(v, val))) {
                 throw new IRException("重复声明局部变量：%s", name);
@@ -578,12 +602,14 @@ public class IRParse {
 
     private List<String> parseArgs(ASTNode node) {
         List<String> args = new ArrayList<>();
-        if (EXPR_STMT.equals(node.getByIndex(1).getName())) {
+        if (EXPR.equals(node.getByIndex(1).getName())) {
             args.add(parseExpr(node.getByIndex(1)));
+            return args;
         }
         if (ARGS.equals(node.getByIndex(1).getName())) {
             args.addAll(parseArgs(node.getByIndex(1)));
             args.add(parseExpr(node.getByIndex(2)));
+            return args;
         }
         return args;
     }
@@ -656,7 +682,35 @@ public class IRParse {
         quads.add(new Quad(JUMP.getOp(), "", "", loopStack.get(loopStack.size() - 1).getBreakLabel()));
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("函数池：\n");
+        for (IRFunc func : funcPool) {
+            sb.append(func);
+            sb.append("\n");
+        }
 
+        sb.append("全局变量：\n");
+        for (AbstractIRVal val : valPool) {
+            if (sameScope(val.getScope(), GLOBAL_SCOPE)) {
+                sb.append(val);
+                sb.append("\n");
+            }
+        }
+
+        sb.append("变量池：\n");
+        for (AbstractIRVal val : valPool) {
+            sb.append(val);
+            sb.append("\n");
+        }
+
+        sb.append("四元式：\n");
+        for (Quad quad : quads) {
+            sb.append(quad);
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 
 
 }

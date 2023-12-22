@@ -21,4 +21,14 @@ public class IRVar extends AbstractIRVal{
         super(s, name, type, scopePath);
         this.hasInit = b;
     }
+
+    public String toString() {
+        return "\t" + id + "(" + name + ", " + type + ", " +
+                "var" + ", " +
+                scope + ")\n";
+    }
+
+    public String toFuncParam() {
+        return id + "(" + name + ", " + type +")";
+    }
 }
