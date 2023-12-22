@@ -95,7 +95,7 @@ public class IRParse {
                 new ArrayList<>(List.of(new IRVar(newVarId(), "asm", STRING, new ArrayList<>(scopePath), true))),
                 new ArrayList<>(),
                 new ArrayList<>(),
-                scopePath
+                new ArrayList<>(scopePath)
         ));
         scopePath.remove(scopePath.size() - 1);
         // 后置检查
@@ -116,7 +116,7 @@ public class IRParse {
             );
             func.getChildFunctions().addAll(
                     new HashSet<String>(callInScope.stream()
-                            .filter(call -> sameScope(func.getScopePath(), call.scopePath))
+                            .filter(call -> inScope(func.getScopePath(), call.scopePath))
                             .map(ScopeFunc::getFuncName)
                             .toList())
             );
@@ -331,7 +331,7 @@ public class IRParse {
         // 进一层作用域
         scopePath.add(++scopeCount);
         funcPool.add(new IRFunc(funcName, retType, entryLabel, exitLabel, false,
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), scopePath));
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(scopePath)));
         quads.add(new Quad(SET_LABEL.getOp(), "", "", entryLabel));
         parseParams(node.getByIndex(3), funcName);
         if (node.getChildren().size() == 5) {

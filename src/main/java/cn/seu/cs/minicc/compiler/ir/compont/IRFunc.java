@@ -28,6 +28,8 @@ public class IRFunc {
     public String toString() {
         return "\tname: " + name + "\n" +
                 "\tretType: " + retType + "\n" +
-                "\tparamList: " + paramList.stream().map(IRVar::toFuncParam).collect(Collectors.joining(",")) + "\n" ;
+                "\tparamList: " + paramList.stream().map(IRVar::toFuncParam).collect(Collectors.joining(",")) + "\n" +
+                "\tchildFunctions: " + childFunctions + "\n";
+
     }
 }
