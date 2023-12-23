@@ -3,6 +3,7 @@ package cn.seu.cs.minicc.compiler.ir;
 import cn.seu.cs.minicc.compiler.ir.compont.AbstractIRVal;
 import cn.seu.cs.minicc.compiler.ir.compont.IRFunc;
 import cn.seu.cs.minicc.compiler.ir.compont.Quad;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.*;
@@ -18,6 +19,14 @@ import static cn.seu.cs.minicc.compiler.ir.compont.QuadOpType.*;
 public class IROptimizer {
     private IRParse irParse;
     private List<String> logs;
+
+    @Data
+    @AllArgsConstructor
+    public static class NodeElement {
+        String type;
+        String name;
+        Integer index;
+    }
 
     public IROptimizer(IRParse irParse) {
         this.irParse = irParse;
@@ -165,9 +174,134 @@ public class IROptimizer {
             }
         }
 
+        boolean unfix = false;
 
+        for (Map.Entry<Integer, Quad> entry : eqVars.entrySet()) {
+            List<String> constStk = new ArrayList<>();
+            List<NodeElement> nodeStk = new ArrayList<>();
+            boolean optimize = true;
+            Integer index = entry.getKey();
+            Quad value = entry.getValue();
+            nodeStk.add(new NodeElement("var", value.getArg1(), index));
+            while (!nodeStk.isEmpty()) {
+                NodeElement node = nodeStk.get(nodeStk.size() - 1);
+                nodeStk.remove(nodeStk.size() - 1);
+                if (node.type.equals("var")) {
+                    for (int i = node.index - 1; i >= 0; i--) {
+                        Quad tmp = irParse.getQuads().get(i);
+                        if (SET_LABEL.equals(tmp.getOp())) {
+                            optimize = false;
+                            break;
+                        } else if (tmp.getRes().equals(node.name)) {
+                            if (INIT_CONST.equals(tmp.getOp())) {
+                                constStk.add(tmp.getArg1());
+                            } else if (OPTIMIZE_OP_LIST.contains(tmp.getOp())) {
+                                int argNum = tmp.getArg2().trim().isEmpty() ? 1 : 2;
+                                nodeStk.add(new NodeElement("op", tmp.getOp(), argNum));
+                                nodeStk.add(new NodeElement("var", tmp.getArg1(), i));
+                                if (argNum > 1) {
+                                    nodeStk.add(new NodeElement("var", tmp.getArg2(), i));
+                                }
+                            } else {
+                                optimize = false;
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    List<String> args = new ArrayList<>();
+                    for (int i = 0; i < node.index; i++) {
+                        args.add(constStk.get(constStk.size() - 1));
+                        constStk.remove(constStk.size() - 1);
+                    }
+                    String name = node.name;
+                    switch (name) {
+                        case "OR_OP" -> constStk.add(
+                                (isBoolean(args.get(0)) || isBoolean(args.get(1))) ? "1" : "0"
+                        );
+                        case "AND_OP" -> constStk.add(
+                                (isBoolean(args.get(0)) && isBoolean(args.get(1))) ? "1" : "0"
+                        );
+                        case "EQ_OP" -> constStk.add(
+                                (args.get(0).equals(args.get(1))) ? "1" : "0"
+                        );
+                        case "NE_OP" -> constStk.add(
+                                (!args.get(0).equals(args.get(1))) ? "1" : "0"
+                        );
+                        case "GT_OP" -> constStk.add(
+                                (Integer.parseInt(args.get(0)) > Integer.parseInt(args.get(1))) ? "1" : "0"
+                        );
+                        case "LT_OP" -> constStk.add(
+                                (Integer.parseInt(args.get(0)) < Integer.parseInt(args.get(1))) ? "1" : "0"
+                        );
+                        case "GE_OP" -> constStk.add(
+                                (Integer.parseInt(args.get(0)) >= Integer.parseInt(args.get(1))) ? "1" : "0"
+                        );
+                        case "LE_OP" -> constStk.add(
+                                (Integer.parseInt(args.get(0)) <= Integer.parseInt(args.get(1))) ? "1" : "0"
+                        );
+                        case "PLUS" -> {
+                            if (node.index == 2)
+                                constStk.add(
+                                        String.valueOf(Integer.parseInt(args.get(0)) + Integer.parseInt(args.get(1)))
+                                );
+                            else
+                                constStk.add(
+                                        String.valueOf(Integer.parseInt(args.get(0)))
+                                );
+                        }
+                        case "MINUS" -> {
+                            if (node.index == 2)
+                                constStk.add(
+                                        String.valueOf(Integer.parseInt(args.get(0)) - Integer.parseInt(args.get(1)))
+                                );
+                            else
+                                constStk.add(
+                                        String.valueOf(-Integer.parseInt(args.get(0)))
+                                );
+                        }
+                        case "MULTIPLY" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) * Integer.parseInt(args.get(1)))
+                        );
+                        case "SLASH" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) / Integer.parseInt(args.get(1)))
+                        );
+                        case "PERCENT" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) % Integer.parseInt(args.get(1)))
+                        );
+                        case "BITAND_OP" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) & Integer.parseInt(args.get(1)))
+                        );
+                        case "BITOR_OP" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) | Integer.parseInt(args.get(1)))
+                        );
+                        case "LEFT_OP" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) << Integer.parseInt(args.get(1)))
+                        );
+                        case "RIGHT_OP" -> constStk.add(
+                                String.valueOf(Integer.parseInt(args.get(0)) >> Integer.parseInt(args.get(1)))
+                        );
+                        case "NOT_OP" -> constStk.add(
+                                isBoolean(args.get(0)) ? "0" : "1"
+                        );
+                        case "BITINV_OP" -> constStk.add(
+                                String.valueOf(~Integer.parseInt(args.get(0)))
+                        );
+                    }
+                }
+                if (!optimize) break;
+            }
+            if (optimize) {
+                Quad quad = new Quad(INIT_CONST.getOp(), constStk.get(0), "", value.getRes());
+                unfix = true;
+                irParse.getQuads().set(index, quad);
+                this.logs.add("常量传播与常量折叠：将位于" + entry.getKey() + "的四元式 " + value + " 优化为 " + quad);
+            }
+        }
+        return unfix;
+    }
 
-
-        return true;
+    public static boolean isBoolean(String arg) {
+        return "1".equals(arg);
     }
 }

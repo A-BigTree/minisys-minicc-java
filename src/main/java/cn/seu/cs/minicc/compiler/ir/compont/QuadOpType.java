@@ -35,11 +35,27 @@ public enum QuadOpType {
     public static final List<String> OPTIMIZE_OP_LIST = List.of(
             "=var",
             "OR_OP",
-            'AND_OP', 'EQ_OP', 'NE_OP', 'GT_OP', 'LT_OP',
-            'GE_OP', 'LE_OP', 'PLUS', 'MINUS', 'MULTIPLY', 'SLASH',
-            'PERCENT', 'BITAND_OP', 'BITOR_OP', 'LEFT_OP',
-            'RIGHT_OP', 'NOT_OP', 'MINUS', 'PLUS', 'BITINV_OP'
-    )
+            "AND_OP",
+            "EQ_OP",
+            "NE_OP",
+            "GT_OP",
+            "LT_OP",
+            "GE_OP",
+            "LE_OP",
+            "PLUS",
+            "MINUS",
+            "MULTIPLY",
+            "SLASH",
+            "PERCENT",
+            "BITAND_OP",
+            "BITOR_OP",
+            "LEFT_OP",
+            "RIGHT_OP",
+            "NOT_OP",
+            "MINUS",
+            "PLUS",
+            "BITINV_OP"
+    );
 
     public boolean equals(String op) {
         return this.op.equals(op);
