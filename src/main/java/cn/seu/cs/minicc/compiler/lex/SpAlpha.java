@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.Map;
 
-import static cn.seu.cs.minicc.compiler.constants.CommonConstants.EMPTY_STRING;
+import static cn.seu.cs.minicc.compiler.constants.Constants.EMPTY_STRING;
 
 /**
  * 特殊字符枚举

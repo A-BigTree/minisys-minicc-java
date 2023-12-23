@@ -1,6 +1,5 @@
 package cn.seu.cs.minicc.compiler.ir;
 
-import cn.seu.cs.minicc.compiler.asm.Arch;
 import cn.seu.cs.minicc.compiler.exception.IRException;
 import cn.seu.cs.minicc.compiler.ir.compont.AbstractIRVal;
 import cn.seu.cs.minicc.compiler.ir.compont.IRFunc;
@@ -10,6 +9,7 @@ import lombok.Data;
 
 import java.util.*;
 
+import static cn.seu.cs.minicc.compiler.constants.Constants.IO_MAX_ADDR;
 import static cn.seu.cs.minicc.compiler.ir.IRParse.VAR_PREFIX;
 import static cn.seu.cs.minicc.compiler.ir.compont.QuadOpType.*;
 
@@ -34,16 +34,15 @@ public class IROptimizer {
         this.irParse = irParse;
         this.logs = new ArrayList<>();
 
-        boolean unfix = false;
+        boolean unfix;
 
         do {
-            unfix = false;
             // 死代码删除
             unfix = deadVarEliminate();
-            unfix = deadFuncEliminate();
-            unfix = deadVarUseEliminate();
+            if (!unfix) unfix = deadFuncEliminate();
+            if (!unfix) unfix = deadVarUseEliminate();
             // 常量传播与常量折叠
-            unfix = constPropAndFold();
+            if (!unfix) unfix = constPropAndFold();
             // 对不合理的命令立即拒绝
             rejectInvalidCommand();
         } while (unfix);
@@ -353,7 +352,7 @@ public class IROptimizer {
                         long addr = tmp.getArg1().startsWith("0x") ?
                                 Long.parseLong(tmp.getArg1().substring(2), 16) :
                                 Long.parseLong(tmp.getArg1());
-                        if (addr < 0 || addr > Arch.IO_MAX_ADDR) {
+                        if (addr < 0 || addr > IO_MAX_ADDR) {
                             throw new IRException("位于" + i + "的四元式" + quad + "存在越界的端口访问");
                         }
                         if (SET_LABEL.equals(tmp.getOp()) || tmp.getRes().equals(quad.getArg2())) {

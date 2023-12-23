@@ -24,6 +24,7 @@ public class IRParse {
     public static final String LABEL_PREFIX = "_label_";
     public static final String VAR_PREFIX = "_var_";
 
+
     /**
      * loop栈内元素
      */
@@ -712,5 +713,10 @@ public class IRParse {
         return sb.toString();
     }
 
+    public List<AbstractIRVal> getGlobalVars() {
+        return valPool.stream()
+                .filter(val -> sameScope(val.getScope(), GLOBAL_SCOPE))
+                .toList();
+    }
 
 }
