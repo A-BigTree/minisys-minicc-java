@@ -1,5 +1,7 @@
 package cn.seu.cs.minicc.compiler.ir;
 
+import cn.seu.cs.minicc.compiler.asm.Arch;
+import cn.seu.cs.minicc.compiler.exception.IRException;
 import cn.seu.cs.minicc.compiler.ir.compont.AbstractIRVal;
 import cn.seu.cs.minicc.compiler.ir.compont.IRFunc;
 import cn.seu.cs.minicc.compiler.ir.compont.Quad;
@@ -32,6 +34,19 @@ public class IROptimizer {
         this.irParse = irParse;
         this.logs = new ArrayList<>();
 
+        boolean unfix = false;
+
+        do {
+            unfix = false;
+            // 死代码删除
+            unfix = deadVarEliminate();
+            unfix = deadFuncEliminate();
+            unfix = deadVarUseEliminate();
+            // 常量传播与常量折叠
+            unfix = constPropAndFold();
+            // 对不合理的命令立即拒绝
+            rejectInvalidCommand();
+        } while (unfix);
 
         // 重新进行基本块划分
         this.irParse.toBasicBlocks();
@@ -61,10 +76,12 @@ public class IROptimizer {
         List<AbstractIRVal> unUsedVars = irParse.getValPool().stream()
                 .filter(v -> !usedVarSet.contains(v.getId()))
                 .toList();
+        Set<String> unUsedVarsSet =
+                new HashSet<>(unUsedVars.stream().map(AbstractIRVal::getId).toList());
         if (!unUsedVars.isEmpty()) {
             logs.add("删除了变量池中的死变量：" + unUsedVars);
         }
-        irParse.getValPool().removeIf(v -> usedVarSet.contains(v.getId()));
+        irParse.getValPool().removeIf(v -> unUsedVarsSet.contains(v.getId()));
         return !unUsedVars.isEmpty();
     }
 
@@ -72,7 +89,7 @@ public class IROptimizer {
     private boolean deadFuncEliminate() {
         List<String> usedFunctions = new ArrayList<>();
         usedFunctions.add("main");
-        boolean flag = false;
+        boolean flag;
         do {
             flag = false;
             for (String func : usedFunctions) {
@@ -88,6 +105,7 @@ public class IROptimizer {
                         flag = true;
                     }
                 }
+                if (flag) break;
             }
         } while (flag);
 
@@ -124,7 +142,7 @@ public class IROptimizer {
     }
 
     // 删除在赋值后从未使用的变量的赋值语句
-    private boolean deadVarUserEliminate() {
+    private boolean deadVarUseEliminate() {
         Map<String, List<Integer>> varUpdate = new HashMap<>();
         for (int i = 0; i < irParse.getQuads().size(); i++) {
             Quad quad = irParse.getQuads().get(i);
@@ -303,5 +321,47 @@ public class IROptimizer {
 
     public static boolean isBoolean(String arg) {
         return "1".equals(arg);
+    }
+
+    // 对不合理的命令立即拒绝
+    private void rejectInvalidCommand() {
+        for (int i = 0; i < irParse.getQuads().size(); i++) {
+            Quad quad = irParse.getQuads().get(i);
+
+            // 编译期除0错误
+            if (quad.getOp().equals("SLASH") || quad.getOp().equals("PERCENT")) {
+                for (int j = i - 1; j >= 0; j--) {
+                    Quad tmp = irParse.getQuads().get(j);
+                    if (INIT_CONST.equals(tmp.getOp()) &&
+                        tmp.getRes().equals(quad.getArg2()) &&
+                        tmp.getArg1().equals("0")) {
+                        throw new IRException("位于" + i + "的四元式" + quad + "存在除以0的错误");
+                    }
+                    if (SET_LABEL.equals(tmp.getOp()) || tmp.getRes().equals(quad.getArg2())) {
+                        break;
+                    }
+                }
+
+            }
+
+            // 越界的端口访问
+            if (INIT_ADDR.equals(quad.getOp())) {
+                for (int j = i - 1; j >= 0; j--) {
+                    Quad tmp = irParse.getQuads().get(j);
+                    if (INIT_CONST.equals(tmp.getOp()) &&
+                            tmp.getRes().equals(quad.getArg1())) {
+                        long addr = tmp.getArg1().startsWith("0x") ?
+                                Long.parseLong(tmp.getArg1().substring(2), 16) :
+                                Long.parseLong(tmp.getArg1());
+                        if (addr < 0 || addr > Arch.IO_MAX_ADDR) {
+                            throw new IRException("位于" + i + "的四元式" + quad + "存在越界的端口访问");
+                        }
+                        if (SET_LABEL.equals(tmp.getOp()) || tmp.getRes().equals(quad.getArg2())) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

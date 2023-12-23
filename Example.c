@@ -19,7 +19,6 @@ int foo(int x) {
 }
 
 int main(void) {
-  int a;
   int b;
   int i;
   int result;
