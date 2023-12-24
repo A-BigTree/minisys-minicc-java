@@ -1,5 +1,6 @@
 package cn.seu.cs.minicc.compiler.ir;
 
+import cn.seu.cs.minicc.compiler.asm.ASMParse;
 import cn.seu.cs.minicc.compiler.lex.DFAParser;
 import cn.seu.cs.minicc.compiler.lex.LexParser;
 import cn.seu.cs.minicc.compiler.lex.Token;
@@ -34,9 +35,12 @@ public class IROptimizerTest {
             YaccParse yaccParse = new YaccParse();
             ASTNode node = yaccParse.parseTokensLALR(tokens, lalr);
             IRParse irParse = new IRParse(node);
-            log.info("\n{}", irParse);
+            // log.info("\n{}", irParse);
             IROptimizer optimizer = new IROptimizer(irParse);
-            log.info("\n{}", optimizer.getIrParse());
+            // log.info("\n{}", optimizer.getIrParse());
+
+            ASMParse asmParse = new ASMParse(optimizer.getIrParse());
+            log.info("\n{}", asmParse.getAsm());
         } catch (Exception e) {
             log.error("\n", e);
         }

@@ -116,7 +116,7 @@ public class IRParse {
                             .toList()
             );
             func.getChildFunctions().addAll(
-                    new HashSet<String>(callInScope.stream()
+                    new HashSet<>(callInScope.stream()
                             .filter(call -> inScope(func.getScopePath(), call.scopePath))
                             .map(ScopeFunc::getFuncName)
                             .toList())

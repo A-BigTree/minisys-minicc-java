@@ -1,6 +1,7 @@
 package cn.seu.cs.minicc.compiler.constants;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Shuxin Wang <shuxinwang662@gmail.com>
@@ -32,4 +33,8 @@ public class Constants {
     public static final int RAM_SIZE = 65536;
 
     public static final int ROM_SIZE = 65536;
+
+    public static final Set<String> INIT_IR_OPS = Set.of(
+            "=$", "call", "j_false", "=var", "=const", "=[]", "[]"
+    );
 }

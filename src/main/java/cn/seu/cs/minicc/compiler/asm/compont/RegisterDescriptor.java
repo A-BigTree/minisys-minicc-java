@@ -2,6 +2,7 @@ package cn.seu.cs.minicc.compiler.asm.compont;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import java.util.Set;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class RegisterDescriptor {
     private boolean usable;
     private Set<String> variables;

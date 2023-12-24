@@ -12,12 +12,13 @@ import java.util.Map;
 @AllArgsConstructor
 @Getter
 public enum MiniCType {
-    INT("int"),
-    VOID("void"),
-    STRING("string"),
-    NONE("none")
+    INT("int", ".word"),
+    VOID("void", "void"),
+    STRING("string", "string"),
+    NONE("none", "none")
     ;
     final String type;
+    final String miniCType;
 
     private static final Map<String, MiniCType> typeMap = Map.of(
             "int", INT,
