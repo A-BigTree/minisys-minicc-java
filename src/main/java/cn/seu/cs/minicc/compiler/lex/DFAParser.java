@@ -6,7 +6,6 @@ import cn.seu.cs.minicc.compiler.lex.dfa.DFA;
 import cn.seu.cs.minicc.compiler.lex.dfa.MapAction;
 import cn.seu.cs.minicc.compiler.lex.dfa.State;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,7 +22,6 @@ import java.util.Map;
  * @author Shuxin Wang <shuxinwang662@gmail.com>
  * Created on 2023/12/20
  */
-@Slf4j
 public class DFAParser {
     public DFA fromFile(String path) throws URISyntaxException, IOException, LexException {
         URL url = this.getClass().getClassLoader().getResource(path);

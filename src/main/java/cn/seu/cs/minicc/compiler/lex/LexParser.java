@@ -3,7 +3,6 @@ package cn.seu.cs.minicc.compiler.lex;
 import cn.seu.cs.minicc.compiler.exception.LexException;
 import cn.seu.cs.minicc.compiler.lex.dfa.DFA;
 import cn.seu.cs.minicc.compiler.lex.dfa.Transform;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +12,6 @@ import java.util.List;
  * @author Shuxin Wang <shuxinwang662@gmail.com>
  * Created on 2023/12/20
  */
-@Slf4j
 public class LexParser {
 
     public List<Token> lexSourceCode(String sourceCode, DFA dfa) throws LexException {
@@ -21,7 +19,7 @@ public class LexParser {
 
         Integer initState = dfa.getStartStatesIndex().get(0);
         int yyLineNo = 1;
-        String yyText = "";
+        String yyText;
         char curChar = ' ';
         StringBuilder curBuf = new StringBuilder();
         int curState = initState;
@@ -95,6 +93,7 @@ public class LexParser {
                     targets[dfa.getAlphabet().get(transform.getAlpha()).charAt(0)] = transform.getTarget();
                 }
             }
+            // TODO : check
             if (other != -1) {
                 for (int target : targets) {
                     if (target == -1) {

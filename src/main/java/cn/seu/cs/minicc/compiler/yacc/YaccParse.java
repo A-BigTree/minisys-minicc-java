@@ -125,7 +125,7 @@ public class YaccParse {
             int nonCnt = 0, nonNonCnt = 0;
             List<TableCell> row = new ArrayList<>();
             for (int symbol = 0; symbol < analyzer.getSymbols().size(); symbol++) {
-                String action = "";
+                String action;
                 Integer target = 0;
                 if (NON_TERMINAL.equals(analyzer.getSymbols().get(symbol).getType())) {
                     action = LALRActionType.NON_TERMINAL.getType();

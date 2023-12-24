@@ -441,14 +441,14 @@ public class IRParse {
             parseReturnStmt(node.getByIndex(1), context);
         }
         if (BREAK_STMT.equals(node.getByIndex(1).getName())) {
-            parseBreakStmt(node.getByIndex(1));
+            parseBreakStmt();
         }
         if (CONTINUE_STMT.equals(node.getByIndex(1).getName())) {
-            parseContinueStmt(node.getByIndex(1));
+            parseContinueStmt();
         }
     }
 
-    private void parseContinueStmt(ASTNode node) {
+    private void parseContinueStmt() {
         if (loopStack.isEmpty()) {
             throw new IRException("continue语句不在循环中");
         }
@@ -676,7 +676,7 @@ public class IRParse {
         }
     }
 
-    private void parseBreakStmt(ASTNode node) {
+    private void parseBreakStmt() {
         if (loopStack.isEmpty()) {
             throw new IRException("break语句不在循环中");
         }
