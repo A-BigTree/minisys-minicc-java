@@ -11,6 +11,9 @@ import java.util.regex.Pattern;
 public class PreCompilerParse {
     public static final Pattern INCLUDE_PATTERN = Pattern.compile("^#include\\s+\"(.*?)\"$");
 
+    /**
+     * 预编译 处理include
+     */
     public static String preCompile(String code, String basePath) {
         List<String> lines = Arrays.stream(code.replaceAll("\r\n", "\n")
                 .split("\n"))
