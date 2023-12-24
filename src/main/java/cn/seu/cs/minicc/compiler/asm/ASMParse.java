@@ -9,6 +9,7 @@ import cn.seu.cs.minicc.compiler.ir.compont.*;
 import lombok.Data;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.seu.cs.minicc.compiler.constants.Constants.INIT_IR_OPS;
 import static cn.seu.cs.minicc.compiler.constants.Constants.USEFUL_REGS;
@@ -212,17 +213,17 @@ public class ASMParse {
 
         asm.add(LABEL_ASM_FORMAT.formatted("jal", arg1));
         asm.add("nop");
-        // 清楚临时寄存器
+        // 清除临时寄存器
         for (Map.Entry<String, AddressDescriptor> entry : addressDescriptors.entrySet()) {
             for (String addr : entry.getValue().getCurrentAddress()) {
                 if (addr.startsWith("$t")) {
-                    entry.getValue().getCurrentAddress().remove(addr);
                     RegisterDescriptor registerDescriptor = registerDescriptors.getOrDefault(addr, null);
                     if (registerDescriptor != null) {
                         registerDescriptor.getVariables().remove(entry.getKey());
                     }
                 }
             }
+            entry.getValue().getCurrentAddress().removeIf(addr -> addr.startsWith("$t"));
         }
 
         if (!res.isEmpty()) {
@@ -253,7 +254,12 @@ public class ASMParse {
                 break;
             case "=const":
                 regs = getRegs(op, arg1, arg2, res, blockIndex, irIndex);
-                long immediateNum = Long.parseLong(arg1);
+                long immediateNum;
+                if (arg1.startsWith("0x")) {
+                    immediateNum = Long.parseLong(arg1.substring(2), 16);
+                } else {
+                    immediateNum = Long.parseLong(arg1);
+                }
                 if (immediateNum <= 32767 && immediateNum >= -32768) {
                     asm.add(CODE3_ASM_FORMAT.formatted("addiu", regs.get(0), "$zero", arg1));
                 } else {
@@ -347,7 +353,10 @@ public class ASMParse {
                 regs = getRegs(op, arg1, arg2, res, blockIndex, irIndex);
                 regY = regs.get(0);
                 regX = regs.get(1);
-                asm.add(CODE_ASM_FORMAT.formatted("move", regX, String.format("0(%s)", regY)));
+                asm.add(CODE_ASM_FORMAT.formatted("lw", regX, String.format("0(%s)", regY)));
+                asm.add("nop");
+                asm.add("nop");
+                manageResDescriptors(regX, res);
                 break;
             default:
                 break;
@@ -432,7 +441,7 @@ public class ASMParse {
                         asm.add(CODE3_ASM_FORMAT.formatted("sltu", regX, "$zero", regX));
                         asm.add(CODE3_ASM_FORMAT.formatted("xori", regX, regX, 1));
                         break;
-                    case "NE_OP":
+                    case "NE_OP", "MINUS":
                         asm.add(CODE3_ASM_FORMAT.formatted("sub", regX, regY, regZ));
                         break;
                     case "LT_OP":
@@ -451,9 +460,6 @@ public class ASMParse {
                         break;
                     case "PLUS":
                         asm.add(CODE3_ASM_FORMAT.formatted("add", regX, regY, regZ));
-                        break;
-                    case "MINUS":
-                        asm.add(CODE3_ASM_FORMAT.formatted("sub", regX, regY, regZ));
                         break;
                     case "MULTIPLY":
                         asm.add(CODE_ASM_FORMAT.formatted("mult", regY, regZ));
@@ -494,7 +500,7 @@ public class ASMParse {
                 String labelType = labels[labels.length - 1];
                 if (labelType.equals("entry")) {
                     currFunc = ir.getFuncPool().stream()
-                            .filter(inner -> inner.getName().equals(res))
+                            .filter(inner -> inner.getEntryLabel().equals(res))
                             .findFirst()
                             .orElse(null);
                     if (currFunc == null) {
@@ -600,7 +606,7 @@ public class ASMParse {
         if (INIT_IR_OPS.contains(op)) {
             String regX, regY, regZ;
             switch (op) {
-                case "=$":
+                case "=$", "=[]":
                     regY = allocateReg(blockIndex, irIndex, arg1, null, null);
                     if (!registerDescriptors.containsKey(regY) || !registerDescriptors.get(regY).getVariables().contains(arg1)) {
                         loadVar(arg1, regY);
@@ -629,17 +635,6 @@ public class ASMParse {
                         loadVar(arg1, regY);
                     }
                     regs = List.of(regY, regY);
-                    break;
-                case "=[]":
-                    regY = allocateReg(blockIndex, irIndex, arg1, null, null);
-                    if (!registerDescriptors.containsKey(regY) || !registerDescriptors.get(regY).getVariables().contains(arg1)) {
-                        loadVar(arg1, regY);
-                    }
-                    regZ = allocateReg(blockIndex, irIndex, arg2, null, null);
-                    if (!registerDescriptors.containsKey(regZ) || !registerDescriptors.get(regZ).getVariables().contains(arg2)) {
-                        loadVar(arg2, regZ);
-                    }
-                    regs = List.of(regY, regZ);
                     break;
                 case "[]":
                     regZ = allocateReg(blockIndex, irIndex, arg2, null, null);
@@ -741,15 +736,11 @@ public class ASMParse {
                                 procedureEnd = true;
                             }
                         }
-                        if (!reused) {
-                            continue;
-                        } else {
+                        if (reused) {
                             String boundMem = addressDescriptors.getOrDefault(var, new AddressDescriptor()).getBoundMemAddress();
                             if (boundMem != null) {
                                 Set<String> addrs = addressDescriptors.getOrDefault(var, new AddressDescriptor()).getCurrentAddress();
-                                if (addrs != null && addrs.size() > 1) {
-                                    continue;
-                                } else {
+                                if (!(addrs != null && addrs.size() > 1)) {
                                     score += 1;
                                 }
 
@@ -928,6 +919,9 @@ public class ASMParse {
             String[] prevEle = prev.split(", | ");
             if (currEle[0].equals("move") && List.of("nop", "sw").contains(prevEle[0])) {
                 String currSrc = currEle[2];
+                if (prevEle.length < 2) {
+                    continue;
+                }
                 String preDest = prevEle[1];
                 if (currSrc.equals(preDest)) {
                     String currDest = currEle[1];
@@ -947,5 +941,11 @@ public class ASMParse {
         }
 
         asm = newAsm.stream().toList();
+    }
+
+    public String toString() {
+        return asm.stream()
+                .map(line -> (!((line.startsWith(".")) || line.contains(":")) ? "\t" : "") + line)
+                .collect(Collectors.joining("\n"));
     }
 }

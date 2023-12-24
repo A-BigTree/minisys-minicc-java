@@ -207,8 +207,8 @@ public class IRParse {
         for (int i = 0; i < leaders2.size() - 1; i++) {
             basicBlocks.add(
                     new BasicBlock(id++,
-                            quads.subList(leaders2.get(i),
-                                    leaders2.get(i + 1)))
+                            new ArrayList<>(quads.subList(leaders2.get(i),
+                                    leaders2.get(i + 1))))
             );
         }
 
@@ -619,7 +619,7 @@ public class IRParse {
         scopePath.add(++scopeCount);
         if (node.getChildren().size() == 2) {
             parseLocalDecls(node.getByIndex(1));
-            parseStmtList(node.getByIndex(1), context);
+            parseStmtList(node.getByIndex(2), context);
         } else if (node.getChildren().size() == 1) {
             parseStmtList(node.getByIndex(1), context);
         }
@@ -691,6 +691,12 @@ public class IRParse {
             sb.append("\n");
         }
 
+        sb.append("函数调用域：\n");
+        for (ScopeFunc call : callInScope) {
+            sb.append(call);
+            sb.append("\n");
+        }
+
         sb.append("全局变量：\n");
         for (AbstractIRVal val : valPool) {
             if (sameScope(val.getScope(), GLOBAL_SCOPE)) {
@@ -710,6 +716,7 @@ public class IRParse {
             sb.append(quad);
             sb.append("\n");
         }
+
         return sb.toString();
     }
 

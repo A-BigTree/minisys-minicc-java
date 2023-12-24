@@ -29,7 +29,9 @@ public class IRFunc {
         return "\tname: " + name + "\n" +
                 "\tretType: " + retType + "\n" +
                 "\tparamList: " + paramList.stream().map(IRVar::toFuncParam).collect(Collectors.joining(",")) + "\n" +
-                "\tchildFunctions: " + childFunctions + "\n";
+                "\tchildFunctions: " + childFunctions + "\n" +
+                "\tScope" + scopePath + "\n" +
+                "\tlocalVars: " + localVars.stream().map(v -> v.getId() + "(" + v.getType() + ", " + v.getName() + ")" ).collect(Collectors.joining(",")) + "\n";
 
     }
 }

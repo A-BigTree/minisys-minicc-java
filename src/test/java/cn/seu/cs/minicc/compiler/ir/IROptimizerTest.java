@@ -35,12 +35,10 @@ public class IROptimizerTest {
             YaccParse yaccParse = new YaccParse();
             ASTNode node = yaccParse.parseTokensLALR(tokens, lalr);
             IRParse irParse = new IRParse(node);
-            // log.info("\n{}", irParse);
             IROptimizer optimizer = new IROptimizer(irParse);
-            // log.info("\n{}", optimizer.getIrParse());
-
+            log.info("\n{}", optimizer.getIrParse());
             ASMParse asmParse = new ASMParse(optimizer.getIrParse());
-            log.info("\n{}", asmParse.getAsm());
+            log.info("\n{}", asmParse);
         } catch (Exception e) {
             log.error("\n", e);
         }
