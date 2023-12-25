@@ -5,14 +5,10 @@ import cn.seu.cs.minicc.compiler.lex.dfa.Action;
 import cn.seu.cs.minicc.compiler.lex.dfa.DFA;
 import cn.seu.cs.minicc.compiler.lex.dfa.MapAction;
 import cn.seu.cs.minicc.compiler.lex.dfa.State;
+import cn.seu.cs.minicc.compiler.util.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,13 +19,8 @@ import java.util.Map;
  * Created on 2023/12/20
  */
 public class DFAParser {
-    public DFA fromFile(String path) throws URISyntaxException, IOException, LexException {
-        URL url = this.getClass().getClassLoader().getResource(path);
-        if (url == null) {
-            throw new LexException("Lex Parser error");
-        }
-        URI uri = url.toURI();
-        String json = Files.readString(Paths.get(uri));
+    public DFA fromFile(String path) throws IOException, LexException {
+        String json = Utils.readJson(path);
         ObjectMapper mapper = new ObjectMapper();
         DFA dfa = mapper.readValue(json, DFA.class);
         // 构建状态
