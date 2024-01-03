@@ -61,7 +61,7 @@ public class IRParse {
 
     private final List<IRFunc> funcPool;
     private final List<Quad> quads;
-    private final List<BasicBlock> basicBlocks;
+    private List<BasicBlock> basicBlocks;
     private final List<AbstractIRVal> valPool;
     private Integer varCount;
     private Integer labelCount;
@@ -164,6 +164,7 @@ public class IRParse {
     }
 
     public void toBasicBlocks() {
+        basicBlocks = new ArrayList<>();
         List<Integer> leaders = new ArrayList<>();
         boolean nextFlag = false;
         for (int i = 0; i < quads.size(); i++) {

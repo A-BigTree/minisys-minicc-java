@@ -62,6 +62,8 @@ public class Main {
             String preCode = PreCompilerParse.preCompile(rawCode, basePath);
             log.info("Pre compiling done");
 
+            // System.out.println(preCode);
+
             // 词法分析
             log.warn("Loading DFA for lexing...");
             DFAParser dfaParser = new DFAParser();
@@ -97,7 +99,6 @@ public class Main {
             log.warn("Optimizing Intermediate Representation...");
             IROptimizer optimizer = new IROptimizer(irParse);
             log.info("IR Optimizing done. Made {} changes", optimizer.getLogs().size());
-
             // 生成汇编代码
             log.warn("Generating Assembly Code...");
             ASMParse asmParse = new ASMParse(optimizer.getIrParse());
@@ -121,6 +122,7 @@ public class Main {
             log.info("Compilation ended successfully with in {}ms", endTime - startTime);
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("ERROR: {}", e.getMessage());
         }
     }
