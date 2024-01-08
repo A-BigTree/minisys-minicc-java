@@ -42,9 +42,9 @@ public class ASMParse {
         this.ir = ir;
         this.asm = new ArrayList<>();
         this.GPRs = new ArrayList<>(USEFUL_REGS);
-        this.registerDescriptors = new HashMap<>();
-        this.addressDescriptors = new HashMap<>();
-        this.stackFrameInfos = new HashMap<>();
+        this.registerDescriptors = new LinkedHashMap<>();
+        this.addressDescriptors = new LinkedHashMap<>();
+        this.stackFrameInfos = new LinkedHashMap<>();
 
         currFunc = null;
         currFrameInfo = null;
@@ -398,7 +398,7 @@ public class ASMParse {
                 asm.add("nop");
                 manageResDescriptors(regX, res);
                 break;
-            case "$=":
+            case "=$":
                 regs = getRegs(op, arg1, arg2, res, blockIndex, irIndex);
                 regY = regs.get(0);
                 regZ = regs.get(1);
@@ -732,7 +732,7 @@ public class ASMParse {
                                 reused = true;
                                 break;
                             }
-                            if (SET_LABEL.equals(quad.getOp()) && quad.getRes().startsWith("_exit")) {
+                            if (SET_LABEL.equals(quad.getOp()) && quad.getRes().endsWith("_exit")) {
                                 procedureEnd = true;
                             }
                         }
@@ -764,7 +764,7 @@ public class ASMParse {
                 }
                 finalReg = minKey;
                 if (minScore > 0) {
-                    Set<String> vars = registerDescriptors.getOrDefault(minKey, new RegisterDescriptor()).getVariables();
+                    Set<String> vars = registerDescriptors.getOrDefault(finalReg, new RegisterDescriptor()).getVariables();
                     if (vars == null) {
                         throw new ASMException("Register %s has no variable", minKey);
                     }
@@ -917,7 +917,7 @@ public class ASMParse {
             String prev = asm.get(i - 1);
             String[] currEle = curr.split(", | ");
             String[] prevEle = prev.split(", | ");
-            if (currEle[0].equals("move") && List.of("nop", "sw").contains(prevEle[0])) {
+            if (currEle[0].equals("move") && !(List.of("nop", "sw").contains(prevEle[0]))) {
                 String currSrc = currEle[2];
                 if (prevEle.length < 2) {
                     continue;
