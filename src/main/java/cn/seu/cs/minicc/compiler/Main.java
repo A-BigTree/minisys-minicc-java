@@ -62,8 +62,6 @@ public class Main {
             String preCode = PreCompilerParse.preCompile(rawCode, basePath);
             log.info("Pre compiling done");
 
-            // System.out.println(preCode);
-
             // 词法分析
             log.warn("Loading DFA for lexing...");
             DFAParser dfaParser = new DFAParser();
