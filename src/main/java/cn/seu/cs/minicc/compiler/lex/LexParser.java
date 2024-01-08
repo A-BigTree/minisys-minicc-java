@@ -93,11 +93,10 @@ public class LexParser {
                     targets[dfa.getAlphabet().get(transform.getAlpha()).charAt(0)] = transform.getTarget();
                 }
             }
-            // TODO : check
             if (other != -1) {
-                for (int target : targets) {
-                    if (target == -1) {
-                        target = other;
+                for (int j = 0; j < targets.length; j++) {
+                    if (targets[j] == -1) {
+                        targets[j] = other;
                     }
                 }
             }
