@@ -244,7 +244,7 @@ public class ASMParse {
                 if (arg1.isEmpty()) {
                     throw new ASMException("out_asm string cannot be empty");
                 }
-                asm.add(arg1.substring(1));
+                asm.add(arg1.substring(1, arg1.length() - 1));
                 break;
             case "j_false":
                 regs = getRegs(op, arg1, arg2, res, blockIndex, irIndex);
@@ -261,7 +261,7 @@ public class ASMParse {
                     immediateNum = Long.parseLong(arg1);
                 }
                 if (immediateNum <= 32767 && immediateNum >= -32768) {
-                    asm.add(CODE3_ASM_FORMAT.formatted("addiu", regs.get(0), "$zero", arg1));
+                    asm.add(CODE3_ASM_FORMAT.formatted("addiu", regs.get(0), "$zero", String.valueOf(immediateNum)));
                 } else {
                     asm.add(CODE_ASM_FORMAT.formatted("lui", regs.get(0), String.valueOf(immediateNum >> 16)));
                     asm.add(CODE3_ASM_FORMAT.formatted("ori", regs.get(0), regs.get(0), String.valueOf(immediateNum & 0x0000ffff)));
@@ -872,7 +872,7 @@ public class ASMParse {
         for (AbstractIRVal globalVar : ir.getGlobalVars()) {
             if (globalVar instanceof IRVar) {
                 addressDescriptors.put(globalVar.getId(),
-                        new AddressDescriptor(globalVar.getName(), new HashSet<>(Set.of(globalVar.getName()))));
+                        new AddressDescriptor(globalVar.getName() + "($0)", new HashSet<>(Set.of(globalVar.getName()))));
             } else {
                 addressDescriptors.put(globalVar.getId(),
                         new AddressDescriptor(globalVar.getName(), new HashSet<>(Set.of(globalVar.getName()))));
