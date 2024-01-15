@@ -214,8 +214,6 @@ public class YaccParse {
         } else if (ACCEPT.equals(action)) {
             return -1;
         } else {
-            System.out.println(stateStack);
-            System.out.println(symbolStack);
             throw new YaccException("语法分析表中存在未定义行为：在状态%s下收到%s时进行%s，推测行号为%s",
                     stateStack.get(stateStack.size() - 1),
                     analyzer.getSymbols().get(symbol).getContent(),

@@ -925,7 +925,7 @@ public class ASMParse {
                 String preDest = prevEle[1];
                 if (currSrc.equals(preDest)) {
                     String currDest = currEle[1];
-                    String newLine = asm.get(i - 1).replace(preDest, currDest);
+                    String newLine = asm.get(i - 1).replaceFirst(preDest.substring(1), currDest.substring(1));
                     newAsm.pop();
                     String[] newEle = newLine.split(", | ");
                     if (newEle[0].equals("move") && newEle[1].equals(newEle[2])) {
